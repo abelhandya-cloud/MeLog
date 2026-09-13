@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalender & Jadwal Harian Interaktif</title>
+    <title>MeLog</title>
+    
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,27 +13,32 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: {
-                            50: '#ecfdf5',
-                            100: '#d1fae5',
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857'
-                        }
+                        accent: 'var(--accent-color)'
                     }
                 }
             }
         }
     </script>
-    <!-- Load FontAwesome for icons -->
+    <!-- Load FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        :root {
+            --accent-color: #3b82f6; /* Default Blue */
+            --bg-color: #f3f4f6; /* Default Light BG */
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease;
+            background-color: var(--bg-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dark body, body.dark {
+            --bg-color: #111827 !important;
+            background-color: var(--bg-color);
         }
 
         /* Animations */
@@ -43,355 +49,716 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Calendar specific styles */
+        /* Calendar */
         .calendar-day {
             height: 48px;
-            font-size: 1.15rem;
-            font-weight: 800;
-            transition: all 0.2s ease;
+            font-size: 1.1rem;
+            font-weight: 700;
         }
-        @keyframes ring-bell {
-            0% { transform: rotate(0deg); }
-            20% { transform: rotate(15deg); }
-            40% { transform: rotate(-15deg); }
-            60% { transform: rotate(10deg); }
-            80% { transform: rotate(-10deg); }
-            100% { transform: rotate(0deg); }
+        
+        /* Checkbox styling */
+        .task-checkbox:checked + label {
+            text-decoration: line-through;
+            opacity: 0.6;
         }
-        .animate-ring {
-            animation: ring-bell 0.8s ease infinite;
-        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
     </style>
 </head>
 
-<body id="desktop-bg" class="min-h-screen p-3 sm:p-6 bg-emerald-50/50 dark:bg-gray-950 flex flex-col items-center justify-start">
-    
-    <!-- Toast Alarm Notification Banner -->
-    <div id="alarm-toast" class="fixed top-5 right-5 z-50 transform translate-x-[120%] transition-transform duration-300 max-w-sm w-full bg-white dark:bg-gray-800 border-l-4 border-emerald-500 shadow-2xl rounded-xl p-4 flex items-start gap-3">
-        <div class="text-emerald-500 text-2xl animate-ring mt-0.5">
-            <i class="fas fa-bell"></i>
-        </div>
-        <div class="flex-grow">
-            <h4 class="font-bold text-gray-800 dark:text-white text-sm">Alarm Pengingat Waktu!</h4>
-            <p id="alarm-message" class="text-xs text-gray-600 dark:text-gray-300 mt-1">Waktunya kegiatan: <span class="font-semibold">Bangun Tidur</span></p>
-        </div>
-        <button onclick="dismissAlarm()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-
-    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Kolom Kiri: Kalender Bulanan & Menu Settings -->
-        <div class="lg:col-span-5 flex flex-col gap-5">
-            <!-- Kartu Kalender -->
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none p-5 border border-gray-100 dark:border-gray-800">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 id="calendar-month-year" class="text-lg font-extrabold text-gray-800 dark:text-white">Bulan Tahun</h2>
-                    <div class="flex items-center gap-1">
-                        <button onclick="changeMonth(-1)" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300 transition-colors">
-                            <i class="fas fa-chevron-left text-sm"></i>
-                        </button>
-                        <button onclick="goToToday()" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400 rounded-lg hover:bg-emerald-100 transition-colors">
-                            Hari Ini
-                        </button>
-                        <button onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300 transition-colors">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Hari dalam seminggu -->
-                <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-gray-400 mb-2">
-                    <span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span>
-                </div>
-
-                <!-- Grid Tanggal -->
-                <div id="calendar-grid" class="grid grid-cols-7 gap-1.5">
-                    <!-- Dinamis oleh JS -->
-                </div>
-            </div>
-
-            <!-- Panel Navigasi Cepat / Info Ringkas -->
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none p-5 border border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                <div>
-                    <h3 class="font-bold text-gray-800 dark:text-white text-sm">Status Audio & Alarm</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Bunyi pengingat otomatis aktif</p>
-                </div>
-                <button onclick="initAudioContext()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2">
-                    <i class="fas fa-volume-up"></i> Aktifkan Suara
+<body class="min-h-screen pb-12 text-gray-800 dark:text-gray-200">
+    <!-- Header -->
+    <header class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <i class="fas fa-calendar-check text-accent"></i> 
+                <span>MeLog</span>
+            </h1>
+            <div class="flex items-center gap-3">
+                <button onclick="openSettingsModal()" class="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors shadow-sm" aria-label="Pengaturan">
+                    <i class="fas fa-cog text-gray-600 dark:text-gray-300"></i>
                 </button>
             </div>
         </div>
+    </header>
 
-        <!-- Kolom Kanan: Jadwal Harian & Catatan -->
-        <div class="lg:col-span-7 flex flex-col">
-            <!-- Header Kartu Jadwal -->
-            <div class="bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl shadow-gray-200/50 dark:shadow-none p-6 border-x border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-black text-gray-800 dark:text-white tracking-tight flex items-center gap-2">
-                        <i class="fas fa-calendar-check text-emerald-500"></i> <span id="selected-date-title">Memuat...</span>
-                    </h1>
-                    <p class="text-xs text-gray-500 mt-1">Kelola jadwal & ibadah harian Anda dengan mudah.</p>
+    <main class="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Column: Calendar -->
+        <div class="lg:col-span-1">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 md:sticky md:top-24">
+                <!-- Calendar Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="prevMonth()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 id="month-year-display" class="text-lg font-bold">Bulan Tahun</h2>
+                    <button onclick="nextMonth()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
                 
-                <div class="flex items-center gap-2">
-                    <!-- Tombol Setting -->
-                    <button onclick="openSettings()" class="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors border border-gray-100 dark:border-gray-800 shadow-sm" title="Pengaturan Tema & Tampilan">
-                        <i class="fas fa-cog text-lg"></i>
-                    </button>
-                    <!-- Dark Mode Toggle -->
-                    <button id="theme-toggle" class="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors border border-gray-100 dark:border-gray-800 shadow-sm" aria-label="Toggle Dark Mode">
-                        <i class="fas fa-moon text-lg" id="theme-icon"></i>
-                    </button>
+                <!-- Days of Week -->
+                <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                    <div class="text-xs font-semibold text-red-500">Min</div>
+                    <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Sen</div>
+                    <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Sel</div>
+                    <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Rab</div>
+                    <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Kam</div>
+                    <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Jum</div>
+                    <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Sab</div>
+                </div>
+                
+                <!-- Calendar Grid -->
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center">
+                    <!-- Days injected by JS -->
                 </div>
             </div>
+        </div>
 
-            <!-- Progress Bar Seksion -->
-            <div class="bg-white dark:bg-gray-900 shadow-xl shadow-gray-200/50 dark:shadow-none px-6 py-4 border-x border-gray-100 dark:border-gray-800">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Progres Kegiatan Hari Ini</span>
-                    <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400" id="progress-text">0%</span>
+        <!-- Right Column: Planner & Routines -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
+                <!-- Date Details Header -->
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Jadwal Tanggal</p>
+                        <h2 id="selected-date-display" class="text-2xl font-bold text-gray-800 dark:text-white">Pilih Tanggal</h2>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mt-4 sm:mt-0 w-full sm:w-1/3">
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                            <span class="text-gray-500">Progres</span>
+                            <span id="progress-text" class="text-accent">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div id="progress-bar" class="bg-accent h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="w-full bg-gray-100 rounded-full h-2.5 dark:bg-gray-800 overflow-hidden">
-                    <div class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500 ease-out" id="progress-bar" style="width: 0%"></div>
-                </div>
-            </div>
 
-            <!-- Tambah Jadwal Custom Form -->
-            <div class="bg-white dark:bg-gray-900 shadow-xl shadow-gray-200/50 dark:shadow-none px-6 py-4 border-x border-gray-100 dark:border-gray-800">
-                <form id="add-task-form" class="flex gap-2">
-                    <input type="time" id="task-time" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-sm font-mono">
-                    <input type="text" id="task-text" placeholder="Tambah kegiatan harian baru..." required class="flex-grow px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-sm">
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 text-sm">
-                        <i class="fas fa-plus"></i> <span class="hidden sm:inline">Tambah</span>
+                <!-- Add Task Form -->
+                <form id="add-task-form" class="flex flex-col sm:flex-row gap-3 mb-6">
+                    <input type="time" id="task-time" required class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 dark:bg-gray-900 dark:border-gray-700 dark:text-white sm:w-32 shadow-inner">
+                    <input type="text" id="task-text" placeholder="Apa kegiatan Anda selanjutnya?" required class="flex-grow px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 dark:bg-gray-900 dark:border-gray-700 dark:text-white shadow-inner">
+                    <button type="submit" class="bg-accent hover:opacity-90 text-white font-medium py-2.5 px-6 rounded-xl transition-all shadow-md shadow-accent/30 flex items-center justify-center gap-2">
+                        <i class="fas fa-plus"></i> Tambah
                     </button>
                 </form>
-            </div>
-
-            <!-- List Jadwal & Rutinitas -->
-            <div class="bg-white dark:bg-gray-900 shadow-xl shadow-gray-200/50 dark:shadow-none p-6 rounded-b-2xl border border-gray-100 dark:border-gray-800 flex-grow min-h-[380px]">
-                
-                <!-- Filter Tabs -->
-                <div class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-800 pb-3">
-                    <div class="flex gap-1.5">
-                        <button class="filter-btn active text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 transition-colors" data-filter="all">Semua</button>
-                        <button class="filter-btn text-xs font-semibold px-3 py-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" data-filter="active">Belum</button>
-                        <button class="filter-btn text-xs font-semibold px-3 py-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" data-filter="completed">Selesai</button>
-                    </div>
-                    <button id="clear-completed" class="text-xs text-red-500 hover:text-red-700 font-semibold hidden transition-colors">Hapus Selesai</button>
-                </div>
-
-                <!-- Empty State -->
-                <div id="empty-state" class="text-center py-8 hidden">
-                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 mb-3 dark:bg-gray-800">
-                        <i class="fas fa-clipboard-list text-xl"></i>
-                    </div>
-                    <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300">Belum ada jadwal kustom</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Tambahkan kegiatan Anda di atas.</p>
-                </div>
 
                 <!-- Task List -->
-                <ul id="task-list" class="space-y-2.5">
+                <div id="empty-state" class="text-center py-8 hidden">
+                    <i class="fas fa-coffee text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                    <p class="text-gray-500">Belum ada kegiatan tambahan.</p>
+                </div>
+                <ul id="task-list" class="space-y-3">
                     <!-- Tasks injected by JS -->
                 </ul>
-                
-                <!-- Ibadah & Rutinitas (Otomatis Tiap Hari) -->
-                <div class="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
-                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                        <h3 class="text-sm font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-pray text-emerald-500"></i> Ibadah & Rutinitas Harian
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Rutinitas Harian -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <i class="fas fa-sync-alt text-emerald-500"></i> Rutinitas
                         </h3>
-                        <button onclick="openRoutineModal()" class="text-xs px-3 py-1.5 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg font-medium text-gray-700 dark:text-gray-300 transition-colors shadow-sm border border-gray-200 dark:border-gray-700">
-                            <i class="fas fa-edit mr-1 text-emerald-500"></i> Kelola Rutinitas
+                        <button onclick="openRoutineModal()" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-edit"></i> Kelola
                         </button>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">Muncul otomatis tiap hari. Centang saat selesai dilaksanakan.</p>
                     <ul id="routine-list" class="space-y-2">
                         <!-- Routines injected by JS -->
                     </ul>
                 </div>
 
-                <!-- Catatan Harian -->
-                <div class="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
-                    <h3 class="text-sm font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-2">
-                        <i class="fas fa-sticky-note text-amber-500"></i> Catatan Hari Ini
+                <!-- Catatan -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 flex flex-col gap-4">
+                    <h3 class="text-lg font-bold flex items-center gap-2 pb-3 border-b border-gray-100 dark:border-gray-700">
+                        <i class="fas fa-book-open text-amber-500"></i> Jurnal Hari Ini
                     </h3>
-                    <textarea id="daily-notes" rows="3" placeholder="Tulis catatan penting, evaluasi, atau jurnal harian di sini..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-xs leading-relaxed resize-none"></textarea>
+                    
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2"><i class="fas fa-heart text-rose-400"></i> Afirmasi Positif</label>
+                        <textarea id="note-affirmation" class="w-full bg-rose-50/50 dark:bg-gray-900/50 border border-rose-100 dark:border-gray-700 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-rose-400/50 resize-none text-sm h-20" placeholder="Saya berharga, saya mampu..."></textarea>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2"><i class="fas fa-star text-amber-400"></i> Apresiasi Hari Ini</label>
+                        <textarea id="note-appreciation" class="w-full bg-amber-50/50 dark:bg-gray-900/50 border border-amber-100 dark:border-gray-700 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-amber-400/50 resize-none text-sm h-20" placeholder="Hal baik yang saya syukuri hari ini..."></textarea>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2"><i class="fas fa-arrow-trend-up text-blue-400"></i> Perbaikan</label>
+                        <textarea id="note-improvement" class="w-full bg-blue-50/50 dark:bg-gray-900/50 border border-blue-100 dark:border-gray-700 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400/50 resize-none text-sm h-20" placeholder="Hal yang bisa saya lakukan lebih baik besok..."></textarea>
+                    </div>
                 </div>
             </div>
+
         </div>
-    </div>
+    </main>
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800" id="settings-content">
-            <div class="flex justify-between items-center mb-5 border-b border-gray-100 dark:border-gray-800 pb-3">
-                <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-sliders-h text-emerald-500"></i> Pengaturan Tampilan
-                </h2>
-                <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="settings-content">
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100 dark:border-gray-700">
+                <h2 class="text-xl font-bold"><i class="fas fa-cog text-accent mr-2"></i>Pengaturan</h2>
+                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
             </div>
             
             <div class="space-y-5">
+                <!-- Theme -->
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Warna Latar Belakang Desktop (Tema Terang)</label>
-                    <div class="flex items-center gap-3">
-                        <input type="color" id="desktop-color-picker" value="#ecfdf5" class="w-12 h-10 rounded-xl cursor-pointer border border-gray-200 dark:border-gray-700 bg-transparent">
-                        <span id="color-hex-label" class="text-xs font-mono text-gray-500">#ecfdf5</span>
-                        <button onclick="resetDesktopColor()" class="ml-auto text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors">Reset Default</button>
+                    <label class="block text-sm font-semibold mb-2">Tema Tampilan</label>
+                    <div class="flex gap-2">
+                        <button onclick="setTheme('light')" id="btn-theme-light" class="flex-1 py-2 px-3 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-sun text-amber-500"></i> Terang
+                        </button>
+                        <button onclick="setTheme('dark')" id="btn-theme-dark" class="flex-1 py-2 px-3 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-moon text-blue-500"></i> Gelap
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Accent Color -->
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Warna Utama</label>
+                    <div class="flex gap-3">
+                        <button onclick="setAccent('#3b82f6')" class="w-8 h-8 rounded-full bg-blue-500 shadow-sm border-2 border-transparent focus:border-gray-400"></button>
+                        <button onclick="setAccent('#10b981')" class="w-8 h-8 rounded-full bg-emerald-500 shadow-sm border-2 border-transparent focus:border-gray-400"></button>
+                        <button onclick="setAccent('#8b5cf6')" class="w-8 h-8 rounded-full bg-purple-500 shadow-sm border-2 border-transparent focus:border-gray-400"></button>
+                        <button onclick="setAccent('#f43f5e')" class="w-8 h-8 rounded-full bg-rose-500 shadow-sm border-2 border-transparent focus:border-gray-400"></button>
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <p class="text-xs text-gray-400 leading-relaxed">Pilihan warna background desktop akan langsung mengubah keseluruhan nuansa layar latar belakang halaman Anda secara otomatis.</p>
+                <!-- Custom BG Color -->
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Warna Background Desktop</label>
+                    <p class="text-xs text-gray-500 mb-2">Hanya berlaku di Mode Terang.</p>
+                    <div class="flex items-center gap-3">
+                        <input type="color" id="bg-color-picker" class="w-10 h-10 rounded cursor-pointer border-0 p-0" onchange="setBgColor(this.value)">
+                        <span class="text-sm font-mono text-gray-500" id="bg-color-hex">#f3f4f6</span>
+                        <button onclick="setBgColor('#f3f4f6')" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300">Reset</button>
+                    </div>
                 </div>
             </div>
-
-            <button onclick="closeSettings()" class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm shadow-md shadow-emerald-600/20">
-                Simpan & Tutup
-            </button>
+            
+            <button onclick="closeSettingsModal()" class="w-full mt-6 bg-accent text-white font-semibold py-2.5 rounded-xl transition-opacity hover:opacity-90">Tutup</button>
         </div>
     </div>
 
-    <!-- Routine Management Modal -->
+    <!-- Routine Modal -->
     <div id="routine-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800" id="routine-content">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-800 pb-3">
-                <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-sync-alt text-emerald-500"></i> Kelola Rutinitas
-                </h2>
-                <button onclick="closeRoutineModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="routine-content">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-gray-700">
+                <h2 class="text-xl font-bold"><i class="fas fa-sync-alt text-emerald-500 mr-2"></i>Kelola Rutinitas</h2>
+                <button onclick="closeRoutineModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
             </div>
+            <p class="text-xs text-gray-500 mb-4">Kegiatan ini akan otomatis muncul setiap hari. Alarm akan berbunyi di jam tersebut jika belum dicentang.</p>
             
-            <p class="text-xs text-gray-500 mb-4">Tambahkan kegiatan yang otomatis muncul setiap hari.</p>
-
             <form id="add-routine-form" class="flex gap-2 mb-4">
-                <input type="time" id="routine-time" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-xs w-28 font-mono">
-                <input type="text" id="routine-text" placeholder="Nama Rutinitas..." required class="flex-grow px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white text-xs">
-                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-xl transition-colors px-4 shadow-md shadow-emerald-600/20 text-xs">
-                    <i class="fas fa-plus"></i>
-                </button>
+                <input type="time" id="routine-time" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:bg-gray-900 dark:border-gray-700 w-28">
+                <input type="text" id="routine-text" placeholder="Nama Rutinitas" required class="flex-grow px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 dark:bg-gray-900 dark:border-gray-700">
+                <button type="submit" class="bg-emerald-500 text-white px-4 rounded-lg hover:bg-emerald-600 transition-colors"><i class="fas fa-plus"></i></button>
             </form>
-
-            <div class="max-h-52 overflow-y-auto pr-1 mb-4 space-y-2" style="scrollbar-width: thin;">
-                <ul id="routine-manager-list" class="space-y-2">
-                    <!-- Manager list injected by JS -->
-                </ul>
-            </div>
             
-            <button onclick="closeRoutineModal()" class="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-white font-semibold py-2.5 rounded-xl transition-colors text-xs">
-                Selesai
-            </button>
+            <div class="max-h-60 overflow-y-auto pr-1" style="scrollbar-width: thin;">
+                <ul id="routine-manager-list" class="space-y-2"></ul>
+            </div>
         </div>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
     <script>
         // --- State Management ---
-        let allTasks = JSON.parse(localStorage.getItem('calendarTasksData')) || {};
-        let allNotes = JSON.parse(localStorage.getItem('calendarNotesData')) || {};
-        let triggeredAlarms = JSON.parse(localStorage.getItem('triggeredAlarmsData')) || {};
+        const storagePrefix = 'plannerApp_';
         
-        // Master Rutinitas & Status Harian
-        let masterRoutines = JSON.parse(localStorage.getItem('masterRoutinesData')) || [
-            { id: 1, time: '04:30', text: 'Sholat Subuh & Doa Pagi' },
-            { id: 2, time: '07:00', text: 'Sarapan & Persiapan Beraktivitas' },
-            { id: 3, time: '12:00', text: 'Sholat Dzuhur & Istirahat' },
-            { id: 4, time: '15:30', text: 'Sholat Ashar' },
-            { id: 5, time: '18:15', text: 'Sholat Maghrib & Mengaji' },
-            { id: 6, time: '19:30', text: 'Sholat Isya & Evaluasi Harian' }
+        let allTasks = JSON.parse(localStorage.getItem(storagePrefix + 'tasks')) || {};
+        let allNotes = JSON.parse(localStorage.getItem(storagePrefix + 'notes')) || {};
+        let triggeredAlarms = JSON.parse(localStorage.getItem(storagePrefix + 'alarms')) || {};
+        
+        let masterRoutines = JSON.parse(localStorage.getItem(storagePrefix + 'masterRoutines')) || [
+            { id: 1, time: '04:30', text: 'Sholat Subuh' },
+            { id: 2, time: '12:00', text: 'Sholat Dzuhur' },
+            { id: 3, time: '15:15', text: 'Sholat Ashar' },
+            { id: 4, time: '18:00', text: 'Sholat Maghrib' },
+            { id: 5, time: '19:15', text: 'Sholat Isya' }
         ];
-        let dailyRoutineStatus = JSON.parse(localStorage.getItem('dailyRoutineStatusData')) || {};
+        let dailyRoutineStatus = JSON.parse(localStorage.getItem(storagePrefix + 'routineStatus')) || {};
+        
+        let settings = JSON.parse(localStorage.getItem(storagePrefix + 'settings')) || {
+            theme: 'light',
+            accent: '#3b82f6',
+            bg: '#f3f4f6'
+        };
 
-        let customDesktopColor = localStorage.getItem('desktopColor') || '#ecfdf5';
-        let isToneStarted = false;
         let currentDate = new Date();
-        let selectedDate = new Date();
-        let selectedDateString = formatDateKey(selectedDate);
-        let currentFilter = 'all';
+        let selectedDateString = formatDate(new Date());
 
-        // DOM References
-        const calendarGrid = document.getElementById('calendar-grid');
-        const calendarMonthYear = document.getElementById('calendar-month-year');
-        const selectedDateTitle = document.getElementById('selected-date-title');
-        const taskList = document.getElementById('task-list');
-        const taskForm = document.getElementById('add-task-form');
-        const taskTimeInput = document.getElementById('task-time');
-        const taskTextInput = document.getElementById('task-text');
-        const emptyState = document.getElementById('empty-state');
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        const dailyNotesInput = document.getElementById('daily-notes');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const clearCompletedBtn = document.getElementById('clear-completed');
-        
-        // Modals Elements
-        const routineList = document.getElementById('routine-list');
-        const routineModal = document.getElementById('routine-modal');
-        const routineContent = document.getElementById('routine-content');
-        const routineManagerList = document.getElementById('routine-manager-list');
-        const addRoutineForm = document.getElementById('add-routine-form');
-        const settingsModal = document.getElementById('settings-modal');
-        const settingsContent = document.getElementById('settings-content');
-        const desktopColorPicker = document.getElementById('desktop-color-picker');
-        const colorHexLabel = document.getElementById('color-hex-label');
-        const desktopBg = document.getElementById('desktop-bg');
-        
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        const alarmToast = document.getElementById('alarm-toast');
-        const alarmMessage = document.getElementById('alarm-message');
+        // --- Utility Functions ---
+        function saveData(key, data) {
+            localStorage.setItem(storagePrefix + key, JSON.stringify(data));
+        }
 
-        // --- Helper Date Formatter ---
-        function formatDateKey(dateObj) {
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+        function formatDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function getDisplayDate(dateStr) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const [year, month, day] = dateStr.split('-');
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('id-ID', options);
+        }
+
+        // Mengonversi catatan lama menjadi format jurnal baru agar data tidak hilang
+        function getNotesForDate(dateStr) {
+            let noteData = allNotes[dateStr];
+            if (typeof noteData === 'string') {
+                noteData = { affirmation: '', appreciation: noteData, improvement: '' };
+                allNotes[dateStr] = noteData; 
+            }
+            return noteData || { affirmation: '', appreciation: '', improvement: '' };
         }
 
         // --- Initialization ---
-        function initApp() {
-            applyDesktopTheme();
-            checkTheme();
+        function init() {
+            applySettings();
             renderCalendar();
-            renderSelectedDay();
+            selectDate(selectedDateString);
             
-            // Set current time to time input
+            // Set current time to default inputs
             const now = new Date();
-            taskTimeInput.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            document.getElementById('task-time').value = timeStr;
+            document.getElementById('routine-time').value = timeStr;
+
+            // Start alarm checker
+            setInterval(checkAlarms, 15000);
+            
+            // Notes auto-save listener
+            ['affirmation', 'appreciation', 'improvement'].forEach(type => {
+                document.getElementById(`note-${type}`).addEventListener('input', (e) => {
+                    if (!allNotes[selectedDateString] || typeof allNotes[selectedDateString] === 'string') {
+                        allNotes[selectedDateString] = getNotesForDate(selectedDateString);
+                    }
+                    allNotes[selectedDateString][type] = e.target.value;
+                    saveData('notes', allNotes);
+                });
+            });
         }
 
-        // --- Desktop Theme Background ---
-        function applyDesktopTheme() {
-            if (!document.body.classList.contains('dark')) {
-                desktopBg.style.backgroundColor = customDesktopColor;
-                desktopColorPicker.value = customDesktopColor;
-                colorHexLabel.textContent = customDesktopColor;
+        // --- Settings Logic ---
+        function applySettings() {
+            const root = document.documentElement;
+            // Theme
+            if (settings.theme === 'dark') {
+                document.body.classList.add('dark');
+                document.getElementById('btn-theme-dark')?.classList.add('ring-2', 'ring-accent', 'bg-gray-700');
+                document.getElementById('btn-theme-light')?.classList.remove('ring-2', 'ring-accent', 'bg-gray-50');
             } else {
-                desktopBg.style.backgroundColor = '';
+                document.body.classList.remove('dark');
+                document.getElementById('btn-theme-light')?.classList.add('ring-2', 'ring-accent', 'bg-gray-50');
+                document.getElementById('btn-theme-dark')?.classList.remove('ring-2', 'ring-accent', 'bg-gray-700');
             }
+            // Colors
+            root.style.setProperty('--accent-color', settings.accent);
+            root.style.setProperty('--bg-color', settings.theme === 'light' ? settings.bg : '#111827');
+            
+            // Update UI elements
+            document.getElementById('bg-color-picker').value = settings.bg;
+            document.getElementById('bg-color-hex').textContent = settings.bg;
         }
 
-        desktopColorPicker.addEventListener('input', (e) => {
-            customDesktopColor = e.target.value;
-            colorHexLabel.textContent = customDesktopColor;
-            localStorage.setItem('desktopColor', customDesktopColor);
-            applyDesktopTheme();
-        });
+        window.setTheme = function(theme) {
+            settings.theme = theme;
+            saveData('settings', settings);
+            applySettings();
+        }
 
-        window.resetDesktopColor = function() {
-            customDesktopColor = '#ecfdf5';
-            localStorage.setItem('desktopColor', customDesktopColor);
-            applyDesktopTheme();
+        window.setAccent = function(color) {
+            settings.accent = color;
+            saveData('settings', settings);
+            applySettings();
+        }
+
+        window.setBgColor = function(color) {
+            settings.bg = color;
+            saveData('settings', settings);
+            applySettings();
+        }
+
+        // Modal Controls
+        window.openSettingsModal = function() {
+            const modal = document.getElementById('settings-modal');
+            const content = document.getElementById('settings-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+        }
+        window.closeSettingsModal = function() {
+            const modal = document.getElementById('settings-modal');
+            const content = document.getElementById('settings-content');
+            modal.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
         }
 
         // --- Calendar Logic ---
         function renderCalendar() {
-            calendarGrid.innerHTML = '';
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            document.getElementById('month-year-display').textContent = new Date(year, month).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div></div>`;
+            }
+
+            const todayStr = formatDate(new Date());
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = formatDate(new Date(year, month, day));
+                const isSelected = dateStr === selectedDateString;
+                const isToday = dateStr === todayStr;
+
+                let classes = 'calendar-day flex items-center justify-center rounded-xl cursor-pointer transition-all duration-200 ';
+                
+                if (isSelected) {
+                    classes += 'bg-accent text-white shadow-md transform scale-105';
+                } else if (isToday) {
+                    classes += 'border-2 border-accent text-accent';
+                } else {
+                    classes += 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700';
+                }
+
+                // Add small dot indicator if tasks exist
+                let dot = '';
+                if (allTasks[dateStr] && allTasks[dateStr].length > 0) {
+                    dot = `<div class="absolute bottom-1 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-accent'}"></div>`;
+                }
+
+                grid.innerHTML += `<div class="${classes} relative flex flex-col" onclick="selectDate('${dateStr}')">
+                    <span>${day}</span>
+                    ${dot}
+                </div>`;
+            }
+        }
+
+        window.prevMonth = function() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+        
+        window.nextMonth = function() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        window.selectDate = function(dateStr) {
+            selectedDateString = dateStr;
+            renderCalendar();
+            
+            // Update UI
+            document.getElementById('selected-date-display').textContent = getDisplayDate(dateStr);
+            
+            const currentNotes = getNotesForDate(dateStr);
+            document.getElementById('note-affirmation').value = currentNotes.affirmation || '';
+            document.getElementById('note-appreciation').value = currentNotes.appreciation || '';
+            document.getElementById('note-improvement').value = currentNotes.improvement || '';
+            
+            renderTasks();
+            renderRoutines();
+        }
+
+        // --- Task Logic ---
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            const emptyState = document.getElementById('empty-state');
+            const tasks = allTasks[selectedDateString] || [];
+            
+            list.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                // Sort by time
+                tasks.sort((a, b) => a.time.localeCompare(b.time));
+                
+                tasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.className = `flex items-center justify-between p-3 rounded-xl border ${task.completed ? 'border-gray-100 bg-gray-50 dark:bg-gray-800/40' : 'border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 shadow-sm'} transition-all fade-in group`;
+                    
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3 w-full">
+                            <input type="checkbox" id="task-${task.id}" class="task-checkbox h-5 w-5 cursor-pointer rounded border-gray-300 text-accent focus:ring-accent" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                            <label for="task-${task.id}" class="cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 flex-grow select-none">
+                                <span class="font-mono text-xs font-semibold px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300">${task.time}</span>
+                                <span class="text-sm font-medium ${task.completed ? 'text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}">${task.text}</span>
+                            </label>
+                            <button onclick="deleteTask(${task.id}, this.parentElement.parentElement)" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-2">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+            }
+            updateProgress();
+        }
+
+        document.getElementById('add-task-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const time = document.getElementById('task-time').value;
+            const text = document.getElementById('task-text').value.trim();
+            
+            if (time && text) {
+                if (!allTasks[selectedDateString]) allTasks[selectedDateString] = [];
+                
+                allTasks[selectedDateString].push({
+                    id: Date.now(),
+                    time: time,
+                    text: text,
+                    completed: false
+                });
+                
+                saveData('tasks', allTasks);
+                document.getElementById('task-text').value = '';
+                renderTasks();
+                renderCalendar(); // Update dots
+            }
+        });
+
+        window.toggleTask = function(id) {
+            const tasks = allTasks[selectedDateString];
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                saveData('tasks', allTasks);
+                renderTasks();
+            }
+        }
+
+        window.deleteTask = function(id, element) {
+            element.classList.add('fade-out');
+            setTimeout(() => {
+                allTasks[selectedDateString] = allTasks[selectedDateString].filter(t => t.id !== id);
+                saveData('tasks', allTasks);
+                renderTasks();
+                renderCalendar();
+            }, 300);
+        }
+
+        // --- Routine Logic ---
+        function renderRoutines() {
+            const list = document.getElementById('routine-list');
+            list.innerHTML = '';
+            
+            if (!dailyRoutineStatus[selectedDateString]) {
+                dailyRoutineStatus[selectedDateString] = {};
+            }
+
+            masterRoutines.sort((a, b) => a.time.localeCompare(b.time));
+
+            masterRoutines.forEach(routine => {
+                const isCompleted = dailyRoutineStatus[selectedDateString][routine.id] || false;
+                const li = document.createElement('li');
+                li.className = `flex items-center justify-between p-2.5 rounded-lg border ${isCompleted ? 'border-transparent bg-emerald-50/50 dark:bg-emerald-900/20' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'} transition-all`;
+                
+                li.innerHTML = `
+                    <div class="flex items-center gap-3 w-full">
+                        <input type="checkbox" id="routine-${routine.id}" class="task-checkbox h-5 w-5 cursor-pointer rounded border-emerald-300 text-emerald-500 focus:ring-emerald-500" ${isCompleted ? 'checked' : ''} onchange="toggleRoutine(${routine.id})">
+                        <label for="routine-${routine.id}" class="cursor-pointer flex items-center gap-2 w-full">
+                            <span class="font-mono text-xs font-semibold px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800 shadow-sm">${routine.time}</span>
+                            <span class="text-sm font-medium ${isCompleted ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'}">${routine.text}</span>
+                        </label>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+            updateProgress();
+        }
+
+        window.toggleRoutine = function(id) {
+            dailyRoutineStatus[selectedDateString][id] = !dailyRoutineStatus[selectedDateString][id];
+            saveData('routineStatus', dailyRoutineStatus);
+            renderRoutines();
+        }
+
+        // Routine Manager Modal
+        window.openRoutineModal = function() {
+            renderRoutineManager();
+            const modal = document.getElementById('routine-modal');
+            const content = document.getElementById('routine-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+        }
+        window.closeRoutineModal = function() {
+            const modal = document.getElementById('routine-modal');
+            const content = document.getElementById('routine-content');
+            modal.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function renderRoutineManager() {
+            const list = document.getElementById('routine-manager-list');
+            list.innerHTML = '';
+            masterRoutines.sort((a, b) => a.time.localeCompare(b.time));
+            
+            masterRoutines.forEach(routine => {
+                const li = document.createElement('li');
+                li.className = "flex items-center justify-between p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600";
+                li.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-xs font-semibold bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm">${routine.time}</span>
+                        <span class="text-sm font-medium">${routine.text}</span>
+                    </div>
+                    <button onclick="deleteMasterRoutine(${routine.id})" class="text-gray-400 hover:text-red-500 p-2"><i class="fas fa-trash-alt"></i></button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        document.getElementById('add-routine-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const time = document.getElementById('routine-time').value;
+            const text = document.getElementById('routine-text').value.trim();
+            if(time && text) {
+                masterRoutines.push({ id: Date.now(), time: time, text: text });
+                saveData('masterRoutines', masterRoutines);
+                document.getElementById('routine-text').value = '';
+                renderRoutineManager();
+                renderRoutines();
+            }
+        });
+
+        window.deleteMasterRoutine = function(id) {
+            masterRoutines = masterRoutines.filter(r => r.id !== id);
+            saveData('masterRoutines', masterRoutines);
+            renderRoutineManager();
+            renderRoutines();
+        }
+
+        // --- Alarm & Progress Logic ---
+        function updateProgress() {
+            let total = 0;
+            let completed = 0;
+            
+            // From tasks
+            const tasks = allTasks[selectedDateString] || [];
+            total += tasks.length;
+            completed += tasks.filter(t => t.completed).length;
+            
+            // From routines
+            total += masterRoutines.length;
+            const routineStatuses = dailyRoutineStatus[selectedDateString] || {};
+            completed += Object.values(routineStatuses).filter(Boolean).length;
+            
+            let percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+            
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            document.getElementById('progress-text').textContent = `${percentage}%`;
+        }
+
+        function playAlarmSound() {
+            if(!window.AudioContext && !window.webkitAudioContext) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.1); // C6
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+                
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 1);
+            } catch(e) { console.log('Audio blocked by browser'); }
+        }
+
+        function triggerAlarm(message) {
+            playAlarmSound();
+            
+            const toast = document.createElement('div');
+            toast.className = 'bg-white dark:bg-gray-800 border-l-4 border-red-500 shadow-xl rounded-r-lg p-4 flex items-center justify-between transform translate-x-full transition-transform duration-300 pointer-events-auto';
+            toast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-bell text-red-500 animate-pulse text-lg"></i>
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-white text-sm">Waktunya!</h4>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 mt-0.5">${message}</p>
+                    </div>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600 ml-4"><i class="fas fa-times"></i></button>
+            `;
+            
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 10000);
+        }
+
+        function checkAlarms() {
+            const now = new Date();
+            const todayStr = formatDate(now);
+            const currTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            
+            if (!triggeredAlarms[todayStr]) triggeredAlarms[todayStr] = [];
+
+            // Check Daily Tasks
+            const todayTasks = allTasks[todayStr] || [];
+            todayTasks.forEach(task => {
+                if (!task.completed && task.time === currTime) {
+                    if (!triggeredAlarms[todayStr].includes(task.id)) {
+                        triggerAlarm(`Jadwal: ${task.text}`);
+                        triggeredAlarms[todayStr].push(task.id);
+                        saveData('alarms', triggeredAlarms);
+                    }
+                }
+            });
+
+            // Check Routines
+            masterRoutines.forEach(routine => {
+                if (routine.time === currTime) {
+                    const isCompleted = dailyRoutineStatus[todayStr] && dailyRoutineStatus[todayStr][routine.id];
+                    if (!isCompleted) {
+                        const alarmId = 'routine-' + routine.id;
+                        if (!triggeredAlarms[todayStr].includes(alarmId)) {
+                            triggerAlarm(`Rutinitas: ${routine.text}`);
+                            triggeredAlarms[todayStr].push(alarmId);
+                            saveData('alarms', triggeredAlarms);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Run application
+        init();
+    </script>
+</body>
+</html>
